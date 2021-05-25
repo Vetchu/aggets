@@ -31,7 +31,7 @@ class FitLoop:
         val_losses = self.validate(validation_loader)
         self.net.train()
         global_start = time.time()
-        batch_size = 32
+        batch_size = 1024
 
         while not self.stop.is_stop():
             train_losses = []
