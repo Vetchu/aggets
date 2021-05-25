@@ -135,7 +135,7 @@ class EarlyStop:
 class ModelHandler:
 
     def __init__(self, model, path):
-        self.model = model
+        self.model = nn.DataParallel(model)
         self.path = path
         self.best_loss = np.inf
         self.success_updates = 0
