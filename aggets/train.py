@@ -9,6 +9,7 @@ from aggets.util import data_to_device
 if torch.cuda.is_available():
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
+import time
 
 class FitLoop:
     def __init__(self, stop, criterion, net, optimizer, log_every=100, log=True):
@@ -29,10 +30,13 @@ class FitLoop:
         batch_num = 0
         val_losses = self.validate(validation_loader)
         self.net.train()
+        global_start = time.time()
+        batch_size = 32
 
         while not self.stop.is_stop():
             train_losses = []
 
+            start = time.time()
             for batch_id, (X, y) in enumerate(train_loader()):
                 X, y = data_to_device(X, self.device), data_to_device(y, self.device)
                 outputs = self.net(X)
@@ -59,6 +63,9 @@ class FitLoop:
                                       np.mean(np.abs(train_losses)),
                                       np.mean(np.abs(val_losses))))
                 batch_num += 1
+            end = time.time()
+            sps = batch_size * batch_num / (end - start)
+            print(f'Epoch finished| Samples/sec: {sps:.2f}')
 
             val_losses = self.validate(validation_loader)
 
@@ -69,6 +76,9 @@ class FitLoop:
             if self.stop.is_best():
                 print(f'saving model MTL={np.mean(np.abs(train_losses))}, MVL={np.mean(np.abs(val_losses))}')
                 self.stop.handler.save(mtype='best')
+        global_end = time.time()
+        sps = batch_num * batch_size / (global_end - global_start)
+        print(f'Training finished| Samples/sec: {sps:.2f}')
 
         self.stop.handler.save(mtype='last')
         self.net.eval()
